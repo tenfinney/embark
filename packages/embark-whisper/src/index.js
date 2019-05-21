@@ -1,7 +1,7 @@
 /* global __dirname module require setTimeout */
 
 import { __ } from 'embark-i18n';
-import {canonicalHost, defaultHost} from 'embark-utils';
+import {dappPath, canonicalHost, defaultHost} from 'embark-utils';
 let Web3 = require('web3');
 const {parallel} = require('async');
 const {fromEvent} = require('rxjs');
@@ -24,6 +24,7 @@ class Whisper {
     this.embark = embark;
     this.web3Ready = false;
     this.webSocketsChannels = {};
+    this.modulesPath = dappPath(embark.config.embarkConfig.generationDir + "/modules");
 
     if (embark.currentContext.includes('test') && options.node &&options.node === 'vm') {
       this.logger.info(__('Whisper disabled in the tests'));
@@ -123,10 +124,10 @@ class Whisper {
       return;
     }
 
-    let code = "";
-
-    code += "\nconst __embarkWhisperNewWeb3 = require('embarkjs-whisper')";
-    code += "\nEmbarkJS.Messages.registerProvider('whisper', __embarkWhisperNewWeb3.default || __embarkWhisperNewWeb3);";
+    const code = `
+      const __embarkWhisperNewWeb3 = EmbarkJS.isNode ? require('${this.modulesPath}/embarkjs-whisper') : require('embarkjs-whisper');
+      EmbarkJS.Messages.registerProvider('whisper', __embarkWhisperNewWeb3.default || __embarkWhisperNewWeb3);
+    `;
 
     self.embark.addCodeToEmbarkJS(code);
   }

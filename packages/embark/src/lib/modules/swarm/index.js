@@ -5,7 +5,7 @@ const SwarmAPI = require('swarm-api');
 const StorageProcessesLauncher = require('../storage/storageProcessesLauncher');
 const constants = require('embark-core/constants');
 require('colors');
-import { buildUrl } from 'embark-utils';
+import { dappPath, buildUrl } from 'embark-utils';
 
 class Swarm {
 
@@ -23,6 +23,7 @@ class Swarm {
     this.addedToConsole = false;
     this.storageProcessesLauncher = null;
     this.usingRunningNode = false;
+    this.modulesPath = dappPath(embark.config.embarkConfig.generationDir + "/modules");
 
     this.webServerConfig = embark.config.webServerConfig;
     this.blockchainConfig = embark.config.blockchainConfig;
@@ -123,9 +124,11 @@ class Swarm {
   addProviderToEmbarkJS() {
     if(this.addedToEmbarkJs) return;
     this.addedToEmbarkJs = true;
-    let code = "";
-    code += "\nconst __embarkSwarm = require('embarkjs-swarm')";
-    code += "\nEmbarkJS.Storage.registerProvider('swarm', __embarkSwarm.default || __embarkSwarm);";
+
+    const code = `
+      const __embarkSwarm = EmbarkJS.isNode ? require('${this.modulesPath}/embarkjs-swarm') : require('embarkjs-swarm');
+      EmbarkJS.Storage.registerProvider('swarm', __embarkSwarm.default || __embarkSwarm);
+    `;
 
     this.embark.addCodeToEmbarkJS(code);
   }
